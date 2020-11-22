@@ -5,6 +5,7 @@ import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import Grid from "@material-ui/core/Grid";
 import { TextField, Button } from "@material-ui/core";
+import Loading from "react-loading-components";
 import axios from "axios";
 
 const Container = styled.div`
@@ -33,14 +34,40 @@ const App = () => {
   const [handlerOne, setHandlerOne] = React.useState("");
   const [handlerTwo, setHandlerTwo] = React.useState("");
   const [data, setData] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+  const [displayContent, setDisplayContent] = React.useState(false);
+  const [error, setError] = React.useState(false);
+  const [errorMsg, setErrorMsg] = React.useState("");
 
   const handleGo = async () => {
+    setLoading(true);
+    setDisplayContent(false);
+    setError(false);
     if (handlerOne != "" && handlerTwo != "") {
       await axios
-        .get("https://jsonplaceholder.typicode.com/users")
+        .get(
+          `https://tw-interests.herokuapp.com/similarity/${handlerOne}/${handlerTwo}`
+        )
         .then((res) => {
           setData(res);
+          if (typeof res.data.categories !== "string") {
+            setLoading(false);
+            setDisplayContent(true);
+          } else {
+            console.log("error");
+            setLoading(false);
+            setErrorMsg(res.data.categories);
+            setError(true);
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+          setLoading(false);
+          setDisplayContent(false);
+          setError(false);
         });
+    } else {
+      setLoading(false);
     }
   };
 
@@ -76,24 +103,53 @@ const App = () => {
               <Grid item xs={12} md={6}>
                 <TextFieldWrapper
                   id="outlined-basic"
-                  label="Handler 1"
+                  label="Handle 1"
                   onChange={handleChangeOne}
                   value={handlerOne}
                   placeholder="@TwitterU"
                   variant="outlined"
                 />
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} md={6} style={{ marginBottom: "10px" }}>
                 <TextFieldWrapper
                   id="outlined-basic"
-                  label="Handler 2"
+                  label="Handle 2"
                   onChange={handleChangeTwo}
                   value={handlerTwo}
                   placeholder="@ElonMusk"
                   variant="outlined"
                 />
               </Grid>
+              <Grid item xs={12}>
+                {error && <p style={{ color: "red" }}>{errorMsg}</p>}
+                {loading && (
+                  <Loading
+                    type="three_dots"
+                    width={32}
+                    height={32}
+                    fill="#00acee"
+                  />
+                )}
+                {displayContent && (
+                  <p style={{ color: "#00acee", margin: 0, padding: 0 }}>
+                    Common interests:{" "}
+                  </p>
+                )}
 
+                <div
+                  style={{
+                    display: "flex",
+                    flexFlow: "row",
+                    justifyContent: "center",
+                  }}
+                >
+                  {displayContent && (
+                    <p style={{ color: "#00acee", fontWeight: "bold" }}>
+                      {data.data.categories.join(", ")}
+                    </p>
+                  )}
+                </div>
+              </Grid>
               <Grid item xs={12}>
                 <Button
                   variant="contained"
